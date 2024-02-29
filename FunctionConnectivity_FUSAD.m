@@ -1,4 +1,4 @@
-function FunctionConnectivity_OUD_FUS(path_conn,path_subjects,subjects,TR,ROIpath, path_greymatter,BATCHFILENAME)
+function FunctionConnectivity_FUSAD(path_conn,path_subjects,subjects,TR,ROIpath, path_greymatter,BATCHFILENAME)
 addpath path_conn
 
 
@@ -17,9 +17,8 @@ BATCH.Setup.voxelresolution = 3; % functional space used
 BATCH.Setup.outputfiles = [0,0,1,1,1]; % write nii volumes for r-maps, p-maps and FDR-p-maps 
 BATCH.Setup.conditions.missingdata   = 1; % allow subjects with missing condition data 
 BATCH.Setup.rois.mask = 1;
-ROIs  = dir( ROIpath ) ;
-ROIs={ROIs.name}';
-ROIs = setdiff(ROIs,{'.';'..'});
+ROIs  = ls( ROIpath ) ;
+ROIs = setdiff(ROIs,{'.';'..'})
  for h=1:size(ROIs,1)
     BATCH.Setup.rois.files{h}= fullfile(ROIpath,ROIs(h,:)); 
  
@@ -29,7 +28,7 @@ for i =1:length(subjects)
 
 SESSION = dir([path_subjects,subjects{i},filesep,'ses*']);
 SESSION={SESSION.name}';
-SESSION = setdiff(SESSION,{'.';'..'});
+
 for j = 1:size(SESSION,1)
 
 
@@ -41,11 +40,7 @@ for j = 1:size(SESSION,1)
 
 FUNC_folder = [path_subjects,subjects{i},filesep,char(SESSION(j,:)),filesep,'func', filesep];
 ANAT_folder =[path_subjects,subjects{i},filesep,char(SESSION(j,:)),filesep,'anat', filesep];
-
-RS_FILES = dir([path_subjects,subjects{i},filesep,char(SESSION(j,:)),filesep,'func' '/s8wuc*.nii']);
-RS_FILES={RS_FILES.name}';
-RS_FILES = setdiff(RS_FILES,{'.';'..'});
-RS_FILE = [FUNC_folder, char(RS_FILES)];
+RS_FILE = [FUNC_folder, ls([path_subjects,subjects{i},filesep,char(SESSION(j,:)),filesep,'func' '\s8wuc*.nii'])];
    t1_list = spm_select('FPList',ANAT_folder,'^wsub*');
     t1_file = char(t1_list(contains(string(t1_list),'.nii'),:));
 %     c1_file = spm_select('FPList',ANAT_folder,'^wc1');
@@ -63,7 +58,7 @@ RS_FILE = [FUNC_folder, char(RS_FILES)];
 
 % specify conditions per subject {ncond}{nsub}{nsess}
 
-BATCH.Setup.conditions.names = {'RS_Baseline','RS_7Days','RS_30Days','RS_90Days'}; %To adaptaccordingly in function of the number of session
+BATCH.Setup.conditions.names = {'RS_Baseline','RS_Day0_PostFUS','RS_Day1_PostFUS','RS_7Days_PostFUS','RS_30Days_PostFUS','RS_90Days_PostFUS'}; %To adaptaccordingly in function of the number of session
  
 
 %{nsub}{nses} 
@@ -99,7 +94,22 @@ BATCH.Setup.conditions.names = {'RS_Baseline','RS_7Days','RS_30Days','RS_90Days'
    BATCH.Setup.conditions.onsets{4}{i}{3} = []; 
  BATCH.Setup.conditions.durations{4}{i}{3} = [];
  BATCH.Setup.conditions.onsets{3}{i}{4} = []; 
- BATCH.Setup.conditions.durations{3}{i}{4} = [];
+ BATCH.Setup.conditions.durations{5}{i}{4} = [];
+  BATCH.Setup.conditions.onsets{5}{i}{4} = []; 
+ BATCH.Setup.conditions.durations{4}{i}{5} = [];
+  BATCH.Setup.conditions.onsets{4}{i}{5} = []; 
+   BATCH.Setup.conditions.durations{5}{i}{3} = [];
+  BATCH.Setup.conditions.onsets{5}{i}{3} = []; 
+ BATCH.Setup.conditions.durations{3}{i}{5} = [];
+  BATCH.Setup.conditions.onsets{3}{i}{5} = []; 
+   BATCH.Setup.conditions.durations{5}{i}{2} = [];
+  BATCH.Setup.conditions.onsets{5}{i}{2} = []; 
+ BATCH.Setup.conditions.durations{2}{i}{5} = [];
+  BATCH.Setup.conditions.onsets{2}{i}{5} = [];
+   BATCH.Setup.conditions.durations{5}{i}{1} = [];
+  BATCH.Setup.conditions.onsets{5}{i}{1} = []; 
+ BATCH.Setup.conditions.durations{1}{i}{5} = [];
+  BATCH.Setup.conditions.onsets{1}{i}{5} = []; 
 %  end
 
 
@@ -109,8 +119,8 @@ BATCH.Setup.conditions.names = {'RS_Baseline','RS_7Days','RS_30Days','RS_90Days'
 %s{ncovariate}{nsub}{nses} 
 BATCH.Setup.covariates.names = {'motion'};
 %     % specify covariates (nuisance regressors) per subject {ncond}{nsub}{nsess}
-    Nifti_outputdir = [path_subjects,subjects{i},filesep ,sprintf('%s/',string(SESSION(j,:))),filesep];
-    BATCH.Setup.covariates.files{1}{i}{j} = spm_select('FPList',FUNC_folder,'rp_c.*/.txt$');% mvt
+    Nifti_outputdir = [path_subjects,subjects{i},filesep ,sprintf('%s\',string(SESSION(j,:))),filesep];
+    BATCH.Setup.covariates.files{1}{i}{j} = spm_select('FPList',FUNC_folder,'rp_c.*\.txt$');% mvt
     end
 end
     BATCH.Setup.done = 1; % run the SETUP step
