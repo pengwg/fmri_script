@@ -1,40 +1,49 @@
-%MAIN SCRIPT FOR PREPROCESSING AND CONNECTIVITY ANALYSIS
+% MAIN SCRIPT FOR PREPROCESSING AND CONNECTIVITY ANALYSIS
+clear
 
-path_subjects = 'C:/Users/natha/Downloads/FUS_transferToNIDA(1)/FUS_transferToNIDA/';
-path_spm = 'C:/spm12/spm12/'
+% TO ADAPT ACCORDINGLY
+path_subjects = '/home/peng/Work/fusOUD/fmri/';
+
+% MR parameters
 TR = 1;
 FWMH = 4;
 TotalReadOutTime = 36.297;
 blipdir = -1;
 
-%subjects list
-subjects =dir(path_subjects);
-subjects={subjects.name}';
-subjects = setdiff(subjects,{'.';'..'});
-subjects = subjects(end-8:end,:); %TO ADAPT ACCORDINGLY (to have the list of subjects you want to preprocess/analyze with the connectivity analysis)
+SPM_directives.do_VDM = true;
+SPM_directives.do_Resclice_Unwarp = true;
+SPM_directives.do_SliceTiming_Correction = true;
+SPM_directives.do_register_functional = true;
+SPM_directives.do_Segment = true;
+SPM_directives.do_normalize_functional = true;
+SPM_directives.do_register_greymatter = true; 
+SPM_directives.do_register_whitematter = true;
+SPM_directives.do_register_csf = true;
+SPM_directives.do_register_structural = true;
+SPM_directives.do_smooth = true;
+SPM_directives.do_MotionCheck = true;
+SPM_directives.do_register_ROI = true;
+
+subjects = dir([path_subjects '/sub*']);
+
+% TO ADAPT ACCORDINGLY (for selective processing)
+% subjects = subjects(end-8:end, :); 
 
 % ROI conversion from MGH to NII (to extract NAC only)
-%conn_mgh2nii(path and name of file to convert here)
+% conn_mgh2nii(path and name of file to convert here)
 
-%Session list
+
 for i = length(subjects)
-    folder_of_sub = [path_subjects char(subjects(i,:)) '/'];
-    cd (folder_of_sub);
-    SESSIONS = dir(folder_of_sub);
-    SESSIONS={SESSIONS.name}';
-    SESSIONS = setdiff(SESSIONS,{'.';'..'});
+    SESSIONS = dir([path_subjects subjects(i).name '/ses-*']);
 
-    SESSIONS = SESSIONS(4,:);
-
-%Preprocessing function
-Preprocessing_Function(path_subjects,subjects(i,:),SESSIONS,path_spm,1,4,-1, 36.297,0,0 ,0 ,0 ,0,0,0 ,0,0 ,0 ,0 ,0,0 )
+    Preprocessing_Function_Linux(subjects(i).name, SESSIONS, TR, FWMH, blipdir, TotalReadOutTime, SPM_directives)
 end
 
-%Connectivity Script
+% Connectivity Script
 subjects = subjects(~contains (subjects, '220'),:);
 BATCHFILENAME = ['E:/WVU-RNI/FUS-OUD-resting_state/Analysis/FUS_FINALtrial_90Days2'];
 ROIpath = 'E:/WVU-RNI/FUS-OUD-resting_state/Analysis/FUS_FINALNOVEMBER_complete/ROI/ROI_UnionNAC/ROITOUSEFORSEEDBASED/';
-path_greymatter = 'E:/WVU-RNI/FUS-OUD-resting_state/Analysis/FUS_FINALNOVEMBER_complete/ROI/ROI_UnionNAC/rTPM_Graymatter.nii'
+path_greymatter = 'E:/WVU-RNI/FUS-OUD-resting_state/Analysis/FUS_FINALNOVEMBER_complete/ROI/ROI_UnionNAC/rTPM_Graymatter.nii';
 FunctionConnectivity_OUD_FUS('C:/conn22a/conn',path_subjects,subjects,TR,ROIpath,path_greymatter,BATCHFILENAME)
 
 % for 90 days, subjetc 216, 218 and 221 relapsed. Missing subject 223

@@ -1,24 +1,16 @@
 %% Preprocessing FUS-OUD data
-%  This script is an adaptation of the preprocessing scripts made by
-%  Juliette Boscheron.
+% This script is an adaptation of the preprocessing scripts made by
+% Juliette Boscheron.
 % I thank her for sharing that script with me.
-%This script is preprocessing resting state fMRI data of patients (adults
-%around 40 years old. It apply a voxel map displacement to correct for some
-%potential distortion due to the magnetic field.
+% This script is preprocessing resting state fMRI data of patients (adults
+% around 40 years old. It apply a voxel map displacement to correct for some
+% potential distortion due to the magnetic field.
 % To run this script you need: - structural file T1, functional file, a
 % phase difference file and a magnitude file as well as the corresponding
 % information (Phase direction encoding, echo time)
-%IMPORTANT: PLease adapt the line indicated by a "%TO ADAPT ACCORDINGLY"
+% IMPORTANT: PLease adapt the line indicated by a "%TO ADAPT ACCORDINGLY"
 
-%Example of how to call the function
-%path_subjects = 'C:/Users/natha/Downloads/FUS_transferToNIDA(1)/FUS_transferToNIDA/';
-%path_spm = 'C:/spm12/spm12'
-% TR = 1;
-% FWMH = 4;
-% TotalReadOutTime = 36.297;
-% blipdir = -1;
-% Preprocessing_Function('C:/Users/natha/Downloads/FUS_transferToNIDA(1)/FUS_transferToNIDA/','C:/spm12/spm12',1,4,-1, 36.297,0,0 ,0 ,0 ,0,0,0 ,0,0 ,0 ,0 ,0,0 )
-function Preprocessing_Function(path_subjects,subjects,SESSIONS, path_spm,TR,FWMH,blipdir,TotalReadOutTime,Flag_VDM,Flag_Resclice_Unwarp ,Flag_SliceTiming_Correction ,Flag_register_functional ,Flag_Segment,Flag_normalize_functional,Flag_register_greymatter ,Flag_register_whitematter,Flag_register_csf ,Flag_register_structural ,Flag_smooth ,Flag_MotionCheck,Flag_register_ROI )
+function Preprocessing_Function_Linux(subject_name, SESSIONS, TR, FWMH, blipdir, TotalReadOutTime, SPM_directives)
 
 %% SETTINGS %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -27,57 +19,52 @@ Count_MotionFrame = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % count = 1;
 
-for j = 1:size(SESSIONS,1)
-    folder_of_sub = [path_subjects char(subjects) '/'];
-    cd (folder_of_sub);
+[path_spm, ~, ~] = fileparts(which('spm'));
 
-    path_to_func = [folder_of_sub char(SESSIONS(j,:) ) '/func/'];
-    path_to_anat = [folder_of_sub char(SESSIONS(j,:) ) '/anat/'];
-    path_to_fmap = [folder_of_sub char(SESSIONS(j,:) ) '/fmap/'];
-    path_to_ROI = [folder_of_sub char(SESSIONS(j,:) ) '/ROI/'];
+for j = 1 : size(SESSIONS, 1)
+    session_name = SESSIONS(j).name;
+
+    path_to_func = [SESSIONS(j).folder '/' session_name '/func/'];
+    path_to_anat = [SESSIONS(j).folder '/' session_name '/anat/'];
+    path_to_fmap = [SESSIONS(j).folder '/' session_name '/fmap/'];
+    path_to_ROI = [SESSIONS(j).folder '/' session_name '/ROI/'];
 
     %%  Get the functional scan
-    FUNCFILE = dir([path_to_func 'sub*task-RS*.nii']);  %this is the standard name for resting state
-    FUNCFILE={FUNCFILE.name}';
-    FUNCFILE = setdiff(FUNCFILE,{'.';'..'});
-    if size(FUNCFILE,1) > 1
-        FUNCFILE = FUNCFILE(~contains(string(FUNCFILE),'P_A'),:); % so we remove from the list all the other type of functional file
-        FUNCFILE = FUNCFILE(~contains(string(FUNCFILE),'PA'),:);
-        FUNCFILE = FUNCFILE(~contains(string(FUNCFILE),'Cue'),:);
-        FUNCFILE = strtrim(FUNCFILE);
-    end
-    if isempty(FUNCFILE)
-        FUNCFILE = dir([path_to_func '*task_rest*.nii']); % sometime the files are not named correctly, so if the ist is empty we try another possible name
-        FUNCFILE={FUNCFILE.name}';
-        FUNCFILE = setdiff(FUNCFILE,{'.';'..'});
-        if isempty(FUNCFILE)
+    FUNCFILE = [dir([path_to_func 'sub*task-RS*.nii']);
+                dir([path_to_func '*task_rest*.nii']);
+                dir([path_to_func '*_RS_-_FMRI*.nii'])];
 
-            FUNCFILE = dir([path_to_func '*'  '_RS_-_FMRI*.nii']);
-            FUNCFILE = dir([path_to_func '*' char(SESSIONS(j,:)) '*_RS_-_FMRI*.nii']);
-            FUNCFILE={FUNCFILE.name}';
-            FUNCFILE = setdiff(FUNCFILE,{'.';'..'});
-            FUNCFILE = FUNCFILE(~contains(string(FUNCFILE),'P_A'),:);
-            FUNCFILE = strtrim(FUNCFILE);
-        end
+    func_files = {FUNCFILE.name}';
+    func_files = func_files(~contains(string(func_files),'P_A'),:); % so we remove from the list all the other type of functional file
+    func_files = func_files(~contains(string(func_files),'PA'),:);
+    func_files = func_files(~contains(string(func_files),'Cue'),:);
+    func_files = strtrim(func_files);
+    
+    if size(func_files, 1) > 1
+        disp('Warning: more than one candidate functional files found. Only process the first one.\n')
+        disp(func_files)
     end
-    if size(FUNCFILE,1)> 1 && contains(subjects,'sub-222-FUS' )
-        FUNCFILE = 'sub-222-FUS_ses-00_RS_-_FMRI_29.nii';
-    end
-    if size(FUNCFILE,1)> 1 && contains(subjects,'sub-220-FUS' )
-        FUNCFILE = 'sub-220-FUS_ses-30_RS_-_FMRI_28.nii';
-    end
+
+    func_file = func_files{1};
+
+    % if size(func_files, 1)> 1 && contains(subject_name,'sub-222-FUS' )
+    %     func_files = 'sub-222-FUS_ses-00_RS_-_FMRI_29.nii';
+    % end
+    % if size(func_files, 1)> 1 && contains(subject_name,'sub-220-FUS' )
+    %     func_files = 'sub-220-FUS_ses-30_RS_-_FMRI_28.nii';
+    % end
 
     % FILENAME(count) = {strtrim(FUNCFILE)} %to get the name of each file used
     % for each participant. Useful for debugging
 
 
-    XX = spm_vol(([path_to_func FUNCFILE]));
+    XX = spm_vol([path_to_func func_file]);
     %% Get number of slices
-    Nb_slice = XX.dim;nb_slices = Nb_slice(3);
+    Nb_slice = XX.dim; nb_slices = Nb_slice(3);
     nb_Frame = size(XX,1);
     %% Get voxel size
     %functional
-    INFO = niftiinfo([path_to_func FUNCFILE]);
+    INFO = niftiinfo([path_to_func func_file]);
     INFO_Pix = INFO.PixelDimensions;
     voxel_size = [2.5 2.5 2.5];
     %structural
@@ -85,54 +72,31 @@ for j = 1:size(SESSIONS,1)
 
 
     %% Get Slice timing value from json file
-    JSON_FUNC = dir([path_to_func 'sub*task-RS*.json']);
-    if size(JSON_FUNC,1) > 1
-        JSON_FUNC = JSON_FUNC(~contains(string(JSON_FUNC),'P_A'),:)
-    elseif isempty(JSON_FUNC)
-        JSON_FUNC = right([path_to_func '*'  '_RS_-_FMRI*.json']);
-        if size(JSON_FUNC,1) > 1
-            JSON_FUNC = JSON_FUNC(~contains(string(JSON_FUNC),'P_A'),:)
-        end
-    end
-    fid = fopen([path_to_func JSON_FUNC]);
-    raw = fread(fid,inf);
-    str = char(raw');
-    fclose(fid);
-    Index1 = strfind(str,'SliceTiming'); Index2 = strfind(str,'ImageOrientationPatientDICOM');
-    String_SliceTime = str(Index1+15:Index2-7); %To adapt accordingly for another sequence
-    slice_timing_ms = str2num(String_SliceTime);
-
+    json_func = regexprep(func_file, '\.nii$', '.json');
+    json_data = jsondecode(fileread([path_to_func json_func]));
+    slice_timing_ms = json_data.SliceTiming;
 
     %% Calculate VDM %%
     %%%%%%%%%%%%%%%%%%%
-    if Flag_VDM == 0
-        ['****** Calculate VDM for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '********' ]
+    if SPM_directives.do_VDM
+        ['****** Calculate VDM for subject ' subject_name '******* Session ' session_name  '********' ]
         clear matlabbatch
-        fieldmap_phase = fullfile(path_to_fmap, right([path_to_fmap 'sub*phase*.nii']));
-        JSON_FILE = right([path_to_fmap '*magnitude*.json']);
-        if strcmp(subjects, 'sub-222-FUS') && j == 1
-            fieldmap_phase = fullfile(path_to_fmap, right([path_to_fmap 'sub*ph*.nii']));
-            JSON_FILE = right([path_to_fmap '*.json']);
-            JSON_FILE = JSON_FILE(~contains(string(JSON_FILE),'_ph.json'),:)
-            JSON_FILE = strtrim(JSON_FILE);
-        end
+
+        fieldmap_phase = dir([path_to_fmap subject_name '*phasediff.nii']);
+        json_fmap_mag = dir([path_to_fmap subject_name '*magnitude*.json']);
+        
         EchoTime = [];
-        for k = 1:size(JSON_FILE,1)
-            fid = fopen([path_to_fmap JSON_FILE(k,:)]);
-            raw = fread(fid,inf);
-            str = char(raw');
-            fclose(fid);
-            Index = strfind(str,'EchoTime');
-            EchoTime(k) = str2num(str(Index+10:Index+17));%select the echotime in the json file
+        for k = 1 : size(json_fmap_mag, 1)
+            json_data = jsondecode(fileread([path_to_fmap json_fmap_mag(k).name]));
+            EchoTime(k) = json_data.EchoTime;
         end
 
-        [EchoTime_ToUse, GOOD_FILE] = min(EchoTime); %give the minimum echotime from the 2 mag file (EchoTime_ToUse), and the index of where this file is relative to the list of json file
-        fieldmap_mag = JSON_FILE(GOOD_FILE,:);
-        fieldmap_mag = strtrim(fieldmap_mag)
+        [~, GOOD_FILE] = min(EchoTime); %give the minimum echotime from the 2 mag file (EchoTime_ToUse), and the index of where this file is relative to the list of json file
+        fieldmap_mag = regexprep(json_fmap_mag(GOOD_FILE).name, '\.json$', '.nii');
 
-        func_files_raw{j}=  [path_to_func FUNCFILE]; %spm_select('FPlist', path_to_func, '^sub.*/.nii$'); % this would work too
-        matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.data.presubphasemag.phase = {[fieldmap_phase ',1']};
-        matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.data.presubphasemag.magnitude = {[path_to_fmap fieldmap_mag(1:end-5) '.nii,1']};
+        func_files_raw{j}=  [path_to_func func_file]; %spm_select('FPlist', path_to_func, '^sub.*/.nii$'); % this would work too
+        matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.data.presubphasemag.phase = {[path_to_fmap fieldmap_phase.name ',1']};
+        matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.data.presubphasemag.magnitude = {[path_to_fmap fieldmap_mag ',1']};
         matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.defaults.defaultsval.et = [min(EchoTime)*1000 max(EchoTime)*1000];
         matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.defaults.defaultsval.maskbrain = 1;
         matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.defaults.defaultsval.blipdir = blipdir;
@@ -143,7 +107,7 @@ for j = 1:size(SESSIONS,1)
         matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.defaults.defaultsval.uflags.fwhm = 10;
         matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.defaults.defaultsval.uflags.pad = 0;
         matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.defaults.defaultsval.uflags.ws = 1;
-        matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.defaults.defaultsval.mflags.template = {[path_spm 'toolbox/FieldMap/T1.nii']};
+        matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.defaults.defaultsval.mflags.template = {[path_spm '/toolbox/FieldMap/T1.nii']};
         matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.defaults.defaultsval.mflags.fwhm = 5;
         matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.defaults.defaultsval.mflags.nerode = 2;
         matlabbatch{1}.spm.tools.fieldmap.calculatevdm.subj.defaults.defaultsval.mflags.ndilate = 4;
@@ -161,7 +125,7 @@ for j = 1:size(SESSIONS,1)
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
 
-        func_files_vdm{j}=  spm_select('FPlist', [path_to_fmap], '^vdm.*/.nii$');
+        func_files_vdm{j}=  spm_select('FPlist', path_to_fmap, '^vdm.*\.nii$');
         matlabbatch{1}.spm.tools.fieldmap.applyvdm.data.scans = {[func_files_raw{j} ]};
         matlabbatch{1}.spm.tools.fieldmap.applyvdm.data.vdmfile = {func_files_vdm{j}};
         matlabbatch{1}.spm.tools.fieldmap.applyvdm.roptions.pedir = 2;
@@ -176,15 +140,15 @@ for j = 1:size(SESSIONS,1)
 
     %% Realign & Unwarp %%
     %%%%%%%%%%%%%%%%%%%%%%
-    if Flag_Resclice_Unwarp == 0
-        ['****** Realign & Unwarp for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '********' ]
+    if SPM_directives.do_Resclice_Unwarp
+        ['****** Realign & Unwarp for subject ' subject_name '******* Session ' session_name '********' ]
 
         clear matlabbatch
 
-        func_files_raw{j}=    [path_to_func  'c' FUNCFILE];
+        func_files_raw{j}=    [path_to_func  'c' func_file];
 
         %%
-        func_files_vdm{j}=  spm_select('FPlist', [path_to_fmap], strcat(sprintf('^vdm.*session%d', j), '.*/.nii$'));
+        func_files_vdm{j}=  spm_select('FPlist', [path_to_fmap], strcat(sprintf('^vdm.*session%d', j), '.*\.nii$'));
 
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
@@ -219,13 +183,13 @@ for j = 1:size(SESSIONS,1)
 
     %% Slice timing correction %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if Flag_SliceTiming_Correction == 0
+    if SPM_directives.do_SliceTiming_Correction
 
-        ['****** Slice timing correction for subject' char(subjects) '******* Session' char(SESSIONS(j,:) ) '********' ]
+        ['****** Slice timing correction for subject' subject_name '******* Session' session_name '********' ]
 
         clear matlabbatch
 
-        func_files_u= spm_select('FPlist', [path_to_func ], '^ucsub.*/.nii$')% [path_to_func ls([path_to_func 'usub*task*.nii'])];%spm_select('FPlist', [path_to_func ], '^u.*/.nii$');
+        func_files_u = spm_select('FPlist', path_to_func, '^ucsub.*\.nii$'); % [path_to_func ls([path_to_func 'usub*task*.nii'])];%spm_select('FPlist', [path_to_func ], '^u.*/.nii$');
         matlabbatch{1}.spm.temporal.st.scans{1}= spm_file(cellstr(spm_select('expand', fullfile(func_files_u))));
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
@@ -245,13 +209,13 @@ for j = 1:size(SESSIONS,1)
 
     %% Coregister anatomical to functional volumes %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if Flag_register_functional == 0
-        ['******  Coregister anatomical to functional volumes for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '********' ]
+    if SPM_directives.do_register_functional
+        ['******  Coregister anatomical to functional volumes for subject ' subject_name '******* Session ' session_name '********' ]
 
         clear matlabbatch
 
-        mean_bold = spm_select('FPlist', [path_to_func], '^meanc.*/.nii$');
-        anat_vol_raw = spm_select('FPlist', path_to_anat, ['^' char(subjects) '.*/.nii$']);
+        mean_bold = spm_select('FPlist', path_to_func, '^meanc.*\.nii$');
+        anat_vol_raw = spm_select('FPlist', path_to_anat, ['^' subject_name '.*\.nii$']);
 
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
@@ -274,15 +238,15 @@ for j = 1:size(SESSIONS,1)
 
     %% Segment anatomical scans in different tissue types %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if Flag_Segment == 0
-        ['****** Segment anatomical scans in different tissue types for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '********' ]
+    if SPM_directives.do_Segment
+        ['****** Segment anatomical scans in different tissue types for subject ' subject_name '******* Session ' session_name '********' ]
 
         clear matlabbatch
 
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
 
-        anat_vol_registered = spm_select('FPlist', path_to_anat, ['^r' char(subjects) '.*/.nii$']);
+        anat_vol_registered = spm_select('FPlist', path_to_anat, ['^r' subject_name '.*\.nii$']);
 
         matlabbatch{1}.spm.spatial.preproc.channel.vols = {[anat_vol_registered ',1']};
         matlabbatch{1}.spm.spatial.preproc.channel.biasreg = 0.001;
@@ -329,16 +293,16 @@ for j = 1:size(SESSIONS,1)
 
     %% Normalise functional volumes to standard space not slice corrected %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if Flag_normalize_functional == 0
-        ['******  Normalise functional volumes to standard space for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '********NO SLICE TIMING CORRECTION*******' ]
+    if SPM_directives.do_normalize_functional
+        ['******  Normalise functional volumes to standard space for subject ' subject_name '******* Session ' session_name '********NO SLICE TIMING CORRECTION*******' ]
 
         clear matlabbatch
 
-        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*/.nii$');
+        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*\.nii$');
         all_in_one_func_files_au = [];
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
-        func_files_au{j}=  spm_select('FPlist', [path_to_func ], '^uc.*/.nii$');
+        func_files_au{j}=  spm_select('FPlist', [path_to_func ], '^uc.*\.nii$');
 
         volumes{j} = spm_file(cellstr(spm_select('expand', fullfile(func_files_au{j}))));
         all_in_one_func_files_au = cellstr([all_in_one_func_files_au; volumes{j}]);
@@ -357,18 +321,18 @@ for j = 1:size(SESSIONS,1)
 
     %% Normalise functional volumes to standard space %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        ['******  Normalise functional volumes to standard space for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '******** SLICE TIMING CORRECTED ***********' ]
+        ['******  Normalise functional volumes to standard space for subject ' subject_name '******* Session ' session_name '******** SLICE TIMING CORRECTED ***********' ]
 
         clear matlabbatch
-    if Flag_normalize_functional == 0
+    if SPM_directives.do_normalize_functional
 
-        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*/.nii$');
+        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*\.nii$');
         all_in_one_func_files_au = [];
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
 
         % if slice timing correction
-        func_files_au{j}=  spm_select('FPlist', [path_to_func ], '^auc.*/.nii$');
+        func_files_au{j}=  spm_select('FPlist', [path_to_func ], '^auc.*\.nii$');
         %if no slice timing correction
         % func_files_au{j}=  spm_select('FPlist', [path_to_func ], '^uc.*/.nii$');
 
@@ -389,13 +353,13 @@ for j = 1:size(SESSIONS,1)
 
     %% Normalise grey matter mask to standard space %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if Flag_register_greymatter == 0
-        ['******  Normalise grey matter mask to standard space for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '********' ]
+    if SPM_directives.do_register_greymatter
+        ['******  Normalise grey matter mask to standard space for subject ' subject_name '******* Session ' session_name '********' ]
 
         clear matlabbatch
 
-        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*/.nii$');
-        c1_rmask = spm_select('FPlist', path_to_anat, '^c1r.*/.nii$');
+        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*\.nii$');
+        c1_rmask = spm_select('FPlist', path_to_anat, '^c1r.*\.nii$');
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
 
@@ -415,13 +379,13 @@ for j = 1:size(SESSIONS,1)
 
     %% Normalise white matter mask to standard space %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if Flag_register_whitematter == 0
-        ['******  Normalise white matter mask to standard space for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '********' ]
+    if SPM_directives.do_register_whitematter
+        ['******  Normalise white matter mask to standard space for subject ' subject_name '******* Session ' session_name '********' ]
 
         clear matlabbatch
 
-        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*/.nii$');
-        c2_rmask = spm_select('FPlist', path_to_anat, '^c2r.*/.nii$');
+        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*\.nii$');
+        c2_rmask = spm_select('FPlist', path_to_anat, '^c2r.*\.nii$');
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
 
@@ -440,13 +404,13 @@ for j = 1:size(SESSIONS,1)
 
     %% Normalise csf mask to standard space %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if Flag_register_csf == 0
-        ['******  Normalise csf mask to standard space for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '********' ]
+    if SPM_directives.do_register_csf
+        ['******  Normalise csf mask to standard space for subject ' subject_name '******* Session ' session_name '********' ]
 
         clear matlabbatch
 
-        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*/.nii$');
-        c3_rmask = spm_select('FPlist', path_to_anat, '^c3r.*/.nii$');
+        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*\.nii$');
+        c3_rmask = spm_select('FPlist', path_to_anat, '^c3r.*\.nii$');
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
 
@@ -465,13 +429,13 @@ for j = 1:size(SESSIONS,1)
 
     %% Normalise structural T1 to standard space %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if Flag_register_structural == 0
-        ['******  Normalise structural T1 to standard space for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '********' ]
+    if SPM_directives.do_register_structural
+        ['******  Normalise structural T1 to standard space for subject ' subject_name '******* Session ' session_name '********' ]
 
         clear matlabbatch
 
-        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*/.nii$');
-        struct = spm_select('FPlist', path_to_anat, '^sub.*/.nii$');
+        def_field = spm_select('FPlist', path_to_anat, '^y_rsub.*\.nii$');
+        struct = spm_select('FPlist', path_to_anat, '^sub.*\.nii$');
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
 
@@ -490,9 +454,9 @@ for j = 1:size(SESSIONS,1)
 
     %% Smooth functional volumes %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if Flag_smooth == 0
+    if SPM_directives.do_smooth
 
-        ['******  Smooth functional volumes for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '********' ]
+        ['******  Smooth functional volumes for subject ' subject_name '******* Session ' session_name '********' ]
 
         clear matlabbatch
 
@@ -500,7 +464,7 @@ for j = 1:size(SESSIONS,1)
         % if slice timing correction
         %  func_files_wau=  spm_select('FPlist', [path_to_func ], '^wau.*/.nii$');
         % if no slice timing correction
-        func_files_wau=  spm_select('FPlist', [path_to_func ], '^wu.*/.nii$');
+        func_files_wau=  spm_select('FPlist', path_to_func, '^wu.*\.nii$');
 
         volumes = spm_file(cellstr(func_files_wau));
         all_in_one_func_files_wau = cellstr([all_in_one_func_files_wau; volumes]);
@@ -521,9 +485,9 @@ for j = 1:size(SESSIONS,1)
 
         %% Smooth functional volumes 8 %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if Flag_smooth == 0
+    if SPM_directives.do_smooth
 
-        ['******  Smooth functional volumes for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '********' ]
+        ['******  Smooth functional volumes for subject ' subject_name '******* Session ' session_name '********' ]
 
         clear matlabbatch
 
@@ -531,7 +495,7 @@ for j = 1:size(SESSIONS,1)
         % if slice timing correction
         %  func_files_wau=  spm_select('FPlist', [path_to_func ], '^wau.*/.nii$');
         % if no slice timing correction
-        func_files_wau=  spm_select('FPlist', [path_to_func ], '^wu.*/.nii$');
+        func_files_wau=  spm_select('FPlist', [path_to_func ], '^wu.*\.nii$');
 
         volumes = spm_file(cellstr(func_files_wau));
         all_in_one_func_files_wau = cellstr([all_in_one_func_files_wau; volumes]);
@@ -553,12 +517,12 @@ for j = 1:size(SESSIONS,1)
     %% Smooth functional volumes %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    ['******  Smooth functional volumes for subject ' char(subjects) '******* Session ' char(SESSIONS(j,:) ) '******** with slice timing correction' ]
+    ['******  Smooth functional volumes for subject ' subject_name '******* Session ' session_name '******** with slice timing correction' ]
 
     clear matlabbatch
 
     all_in_one_func_files_wau = [];
-    func_files_wau=  spm_select('FPlist', [path_to_func ], '^wauc.*/.nii$');
+    func_files_wau=  spm_select('FPlist', [path_to_func ], '^wauc.*\.nii$');
     volumes = spm_file(cellstr(func_files_wau));
     all_in_one_func_files_wau = cellstr([all_in_one_func_files_wau; volumes]);
     spm('defaults', 'FMRI');
@@ -580,10 +544,10 @@ for j = 1:size(SESSIONS,1)
     %% SANITY CHECK: FRAMEWISE DISPLACEMENT
     %Get the number of frame that have a displacement bigger than a certain
     %threshold (standard is the size of a voxel and save a picture of the displacement in mm in the three axis
-    if Flag_MotionCheck == 0
-        [Number_Of_Frame_Above_Threshold_Per_Session] = Check_motionDisplacement_NHM_v1(path_to_func, 0.5, char(SESSIONS(j,:)), char(subjects));
+    if SPM_directives.do_MotionCheck
+        [Number_Of_Frame_Above_Threshold_Per_Session] = Check_motionDisplacement_NHM_v1(path_to_func, 0.5, session_name, subject_name);
         PercentDisplacement(Count_MotionFrame) = Number_Of_Frame_Above_Threshold_Per_Session*100/nb_Frame;
-        Subject_Session(Count_MotionFrame) = {[char(subjects) '-' char(SESSIONS(j,:))]}
+        Subject_Session(Count_MotionFrame) = {[subject_name '-' session_name]}
         Count_MotionFrame = Count_MotionFrame + 1;
     end
 end
