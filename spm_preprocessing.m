@@ -10,7 +10,7 @@
 % information (Phase direction encoding, echo time)
 % IMPORTANT: PLease adapt the line indicated by a "%TO ADAPT ACCORDINGLY"
 
-function Preprocessing_Function_Linux(subject_name, SESSIONS, TR, FWMH, blipdir, TotalReadOutTime, SPM_directives)
+function spm_preprocessing(subject_name, SESSIONS, TR, FWMH, blipdir, TotalReadOutTime, SPM_directives)
 
 %% SETTINGS %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -545,7 +545,7 @@ for j = 1 : size(SESSIONS, 1)
     %Get the number of frame that have a displacement bigger than a certain
     %threshold (standard is the size of a voxel and save a picture of the displacement in mm in the three axis
     if SPM_directives.do_MotionCheck
-        [Number_Of_Frame_Above_Threshold_Per_Session] = Check_motionDisplacement_NHM_v1(path_to_func, 0.5, session_name, subject_name);
+        [Number_Of_Frame_Above_Threshold_Per_Session] = check_motionDisplacement_NHM_v1(path_to_func, 0.5, session_name, subject_name);
         PercentDisplacement(Count_MotionFrame) = Number_Of_Frame_Above_Threshold_Per_Session*100/nb_Frame;
         Subject_Session(Count_MotionFrame) = {[subject_name '-' session_name]}
         Count_MotionFrame = Count_MotionFrame + 1;

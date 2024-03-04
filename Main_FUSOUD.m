@@ -36,7 +36,7 @@ subjects = dir([path_subjects '/sub*']);
 for i = length(subjects)
     SESSIONS = dir([path_subjects subjects(i).name '/ses-*']);
 
-    Preprocessing_Function_Linux(subjects(i).name, SESSIONS, TR, FWMH, blipdir, TotalReadOutTime, SPM_directives)
+    spm_preprocessing(subjects(i).name, SESSIONS, TR, FWMH, blipdir, TotalReadOutTime, SPM_directives)
 end
 
 % Connectivity Script
@@ -44,6 +44,6 @@ subjects = subjects(~contains (subjects, '220'),:);
 BATCHFILENAME = ['E:/WVU-RNI/FUS-OUD-resting_state/Analysis/FUS_FINALtrial_90Days2'];
 ROIpath = 'E:/WVU-RNI/FUS-OUD-resting_state/Analysis/FUS_FINALNOVEMBER_complete/ROI/ROI_UnionNAC/ROITOUSEFORSEEDBASED/';
 path_greymatter = 'E:/WVU-RNI/FUS-OUD-resting_state/Analysis/FUS_FINALNOVEMBER_complete/ROI/ROI_UnionNAC/rTPM_Graymatter.nii';
-FunctionConnectivity_OUD_FUS('C:/conn22a/conn',path_subjects,subjects,TR,ROIpath,path_greymatter,BATCHFILENAME)
+conn_FUSOUD('C:/conn22a/conn',path_subjects,subjects,TR,ROIpath,path_greymatter,BATCHFILENAME)
 
 % for 90 days, subjetc 216, 218 and 221 relapsed. Missing subject 223

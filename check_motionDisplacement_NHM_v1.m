@@ -1,4 +1,4 @@
-function  [Number_of_Frame_To_Remove]= Check_motionDisplacement_NHM_v1(path_to_func,threshold,session,subjects)
+function  [Number_of_Frame_To_Remove]= check_motionDisplacement_NHM_v1(path_to_func,threshold,session,subjects)
 %This function add a column of framwise displacement (using bramila
 %function (ref % Power et al. (2012) doi:10.1016/j.neuroimage.2011.10.018 and also
 % Power et al. (2014) doi:10.1016/j.neuroimage.2013.08.048) and determine a
