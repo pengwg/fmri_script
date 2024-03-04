@@ -2,7 +2,7 @@
 clear
 
 % TO ADAPT ACCORDINGLY
-path_subjects = '/home/peng/Work/fusOUD/fmri/';
+path_subjects = '~/Work/fusOUD/fmri/';
 
 % MR parameters
 TR = 1;

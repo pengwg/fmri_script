@@ -30,9 +30,9 @@ for j = 1 : size(SESSIONS, 1)
     path_to_ROI = [SESSIONS(j).folder '/' session_name '/ROI/'];
 
     %%  Get the functional scan
-    FUNCFILE = [dir([path_to_func 'sub*task-RS*.nii']);
-                dir([path_to_func '*task_rest*.nii']);
-                dir([path_to_func '*_RS_-_FMRI*.nii'])];
+    FUNCFILE = [dir([path_to_func subject_name '*task-RS*.nii']);
+                dir([path_to_func subject_name '*task_rest*.nii']);
+                dir([path_to_func subject_name '*_RS_-_FMRI*.nii'])];
 
     func_files = {FUNCFILE.name}';
     func_files = func_files(~contains(string(func_files),'P_A'),:); % so we remove from the list all the other type of functional file
@@ -82,8 +82,11 @@ for j = 1 : size(SESSIONS, 1)
         ['****** Calculate VDM for subject ' subject_name '******* Session ' session_name  '********' ]
         clear matlabbatch
 
-        fieldmap_phase = dir([path_to_fmap subject_name '*phasediff.nii']);
-        json_fmap_mag = dir([path_to_fmap subject_name '*magnitude*.json']);
+        fieldmap_phase = [dir([path_to_fmap subject_name '*phasediff.nii']);
+                          dir([path_to_fmap subject_name '*ph.nii'])]; % Accommodate sub-222-FUS/ses-00
+        json_fmap_mag = [dir([path_to_fmap subject_name '*magnitude*.json']);
+                         dir([path_to_fmap subject_name '*e1.json']); % Accommodate sub-222-FUS/ses-00
+                         dir([path_to_fmap subject_name '*e2.json'])];
         
         EchoTime = [];
         for k = 1 : size(json_fmap_mag, 1)
