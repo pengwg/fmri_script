@@ -10,7 +10,7 @@
 % information (Phase direction encoding, echo time)
 % IMPORTANT: PLease adapt the line indicated by a "%TO ADAPT ACCORDINGLY"
 
-function spm_preprocessing(subject_name, SESSIONS, TR, FWMH, blipdir, TotalReadOutTime, SPM_directives)
+function spm_preprocess(subject_name, SESSIONS, TR, FWMH, blipdir, TotalReadOutTime, SPM_directives)
 
 %% SETTINGS %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

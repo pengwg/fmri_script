@@ -1,4 +1,4 @@
-function FunctionConnectivity_OUD_FUS(path_conn,path_subjects,subjects,TR,ROIpath, path_greymatter,BATCHFILENAME)
+function conn_FUSOUD(path_conn,path_subjects,subjects,TR,ROIpath, path_greymatter,BATCHFILENAME)
 addpath path_conn
 
 

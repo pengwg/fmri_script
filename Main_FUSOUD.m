@@ -36,7 +36,7 @@ subjects = dir([path_subjects '/sub*']);
 for i = length(subjects)
     SESSIONS = dir([path_subjects subjects(i).name '/ses-*']);
 
-    spm_preprocessing(subjects(i).name, SESSIONS, TR, FWMH, blipdir, TotalReadOutTime, SPM_directives)
+    spm_preprocess(subjects(i).name, SESSIONS, TR, FWMH, blipdir, TotalReadOutTime, SPM_directives)
 end
 
 % Connectivity Script
