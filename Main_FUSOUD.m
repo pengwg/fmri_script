@@ -3,6 +3,7 @@ clear
 
 % TO ADAPT ACCORDINGLY
 path_subjects = '~/Work/fusOUD/fmri/';
+path_subjects = '/tm/WVU-RNI/FUS-OUD/PreprocessedData/';
 
 % MR parameters
 TR = 1;
@@ -25,13 +26,11 @@ SPM_directives.do_MotionCheck = true;
 SPM_directives.do_register_ROI = true;
 
 subjects = dir([path_subjects '/sub*']);
-
 % TO ADAPT ACCORDINGLY (for selective processing)
 % subjects = subjects(end-8:end, :); 
 
 % ROI conversion from MGH to NII (to extract NAC only)
 % conn_mgh2nii(path and name of file to convert here)
-
 
 for i = length(subjects)
     SESSIONS = dir([path_subjects subjects(i).name '/ses-*']);
@@ -40,10 +39,11 @@ for i = length(subjects)
 end
 
 % Connectivity Script
-subjects = subjects(~contains (subjects, '220'),:);
-BATCHFILENAME = ['E:/WVU-RNI/FUS-OUD-resting_state/Analysis/FUS_FINALtrial_90Days2'];
-ROIpath = 'E:/WVU-RNI/FUS-OUD-resting_state/Analysis/FUS_FINALNOVEMBER_complete/ROI/ROI_UnionNAC/ROITOUSEFORSEEDBASED/';
-path_greymatter = 'E:/WVU-RNI/FUS-OUD-resting_state/Analysis/FUS_FINALNOVEMBER_complete/ROI/ROI_UnionNAC/rTPM_Graymatter.nii';
-conn_FUSOUD('C:/conn22a/conn',path_subjects,subjects,TR,ROIpath,path_greymatter,BATCHFILENAME)
+% subjects = subjects(~contains (subjects, '220'),:);
+
+BATCHFILENAME = [path_subjects 'Analysis/FUS_FINALtrial_90Days2'];
+ROIpath = 'ROI/Seed/';
+path_greymatter = 'ROI/GreyMatter/rTPM_Graymatter.nii';
+conn_FUSOUD(path_subjects, {subjects.name}, TR, ROIpath, path_greymatter, BATCHFILENAME)
 
 % for 90 days, subjetc 216, 218 and 221 relapsed. Missing subject 223
