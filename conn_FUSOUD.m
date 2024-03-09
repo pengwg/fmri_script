@@ -2,6 +2,9 @@ function conn_FUSOUD(path_subjects, subjects, TR, ROIpath, path_greymatter, BATC
 %% SETUP
 %Define batch properties
 clear BATCH;
+
+BATCH.Setup.conditions.names = {'RS_Baseline', 'RS_7Days', 'RS_30Days'}; 
+
 BATCH.filename = BATCHFILENAME;
 BATCH.Setup.isnew = 1;
 BATCH.Setup.RT = TR;
@@ -21,20 +24,18 @@ for h = 1 : size(ROIs, 1)
 end
 
 for i =1 : length(subjects)
-    % specify targeted ROIs
     SESSION = dir([path_subjects, subjects{i}, filesep, 'ses*']);
     SESSION = {SESSION.name}';
-    SESSION = setdiff(SESSION,{'.'; '..'});
 
     for j = 1 : size(SESSION, 1)
         %SET FOR ENCODING
 
-        FUNC_folder = [path_subjects subjects{i} filesep char(SESSION(j, :)) filesep 'func' filesep];
-        ANAT_folder = [path_subjects subjects{i} filesep char(SESSION(j, :)) filesep 'anat' filesep];
+        FUNC_folder = [path_subjects subjects{i} filesep SESSION{j} filesep 'func' filesep];
+        ANAT_folder = [path_subjects subjects{i} filesep SESSION{j} filesep 'anat' filesep];
 
-        RS_FILES = dir([path_subjects subjects{i} filesep char(SESSION(j,:)) filesep 'func' '/s8wuc*.nii']);
+        RS_FILES = dir([path_subjects subjects{i} filesep SESSION{j} filesep 'func' '/s8wuc*.nii']);
         RS_FILES = {RS_FILES.name}';
-        RS_FILES = setdiff(RS_FILES,{'.'; '..'});
+
         RS_FILE = [FUNC_folder, char(RS_FILES)];
         t1_list = spm_select('FPList', ANAT_folder, '^wsub*');
         t1_file = char(t1_list(contains(string(t1_list), '.nii'), :));
@@ -51,50 +52,29 @@ for i =1 : length(subjects)
         BATCH.Setup.masks.CSF.files{i}{j} = c3_file;
         BATCH.Setup.masks.CSF.dimensions = 1;
 
-        % specify conditions per subject {ncond}{nsub}{nsess}
-        BATCH.Setup.conditions.names = {'RS_Baseline', 'RS_7Days', 'RS_30Days', 'RS_90Days'}; %To adaptaccordingly in function of the number of session
-        %{nsub}{nses}
+        %To adaptaccordingly in function of the number of session {nsub}{nses}
+        %[ repmat(Nifti_outputdir_func_1,size(ls([Nifti_outputdir_func_1 ,'*moco*.nii']),1),1) ls([Nifti_outputdir_func_1 ,'*moco*.nii'])];
+        BATCH.Setup.functionals{i}{j} = spm_file(cellstr(spm_select('expand', RS_FILE)));
 
-        BATCH.Setup.functionals{i}{j} = spm_file(cellstr(spm_select('expand', RS_FILE)));%[ repmat(Nifti_outputdir_func_1,size(ls([Nifti_outputdir_func_1 ,'*moco*.nii']),1),1) ls([Nifti_outputdir_func_1 ,'*moco*.nii'])];
-        BATCH.Setup.conditions.onsets{j}{i}{j} = 9; % we remove the first 9 scans to avoid any arctefact effect of BOLD signal peak due to the entrance in the MRI
-        BATCH.Setup.conditions.durations{j}{i}{j} = Inf;
-        %  if j == 2
-        BATCH.Setup.conditions.onsets{1}{i}{2} = [];
-        BATCH.Setup.conditions.durations{1}{i}{2} = [];
-        BATCH.Setup.conditions.onsets{2}{i}{1} = [];
-        BATCH.Setup.conditions.durations{2}{i}{1} = [];
-        %  elseif j == 3
-
-        BATCH.Setup.conditions.onsets{3}{i}{2} = [];
-        BATCH.Setup.conditions.durations{3}{i}{2} = [];
-        BATCH.Setup.conditions.onsets{3}{i}{1} = [];
-        BATCH.Setup.conditions.durations{3}{i}{1} = [];
-        BATCH.Setup.conditions.onsets{1}{i}{3} = [];
-        BATCH.Setup.conditions.durations{1}{i}{3} = [];
-        BATCH.Setup.conditions.onsets{2}{i}{3} = [];
-        BATCH.Setup.conditions.durations{2}{i}{3} = [];
-        % if j = 4
-
-        BATCH.Setup.conditions.onsets{4}{i}{1} = [];
-        BATCH.Setup.conditions.durations{4}{i}{1} = [];
-        BATCH.Setup.conditions.onsets{4}{i}{2} = [];
-        BATCH.Setup.conditions.durations{4}{i}{2} = [];
-        BATCH.Setup.conditions.onsets{1}{i}{4} = [];
-        BATCH.Setup.conditions.durations{1}{i}{4} = [];
-        BATCH.Setup.conditions.onsets{2}{i}{4} = [];
-        BATCH.Setup.conditions.durations{2}{i}{4} = [];
-        BATCH.Setup.conditions.onsets{4}{i}{3} = [];
-        BATCH.Setup.conditions.durations{4}{i}{3} = [];
-        BATCH.Setup.conditions.onsets{3}{i}{4} = [];
-        BATCH.Setup.conditions.durations{3}{i}{4} = [];
-        %  end
+        % specify conditions per subject {ncond}{nsub}{nsess}        
+        for k = 1 : length(BATCH.Setup.conditions.names)
+            if k == j
+                % we remove the first 9 scans to avoid any arctefact effect of BOLD signal peak due to the entrance in the MRI
+                BATCH.Setup.conditions.onsets{k}{i}{j} = 9;
+                BATCH.Setup.conditions.durations{k}{i}{j} = Inf;
+            else
+                BATCH.Setup.conditions.onsets{k}{i}{j} = [];
+                BATCH.Setup.conditions.durations{k}{i}{j} = [];
+            end
+        end
 
         %% DENOISING
         %s{ncovariate}{nsub}{nses}
         BATCH.Setup.covariates.names = {'motion'};
         %     % specify covariates (nuisance regressors) per subject {ncond}{nsub}{nsess}
-        Nifti_outputdir = [path_subjects,subjects{i}, filesep, sprintf('%s/', string(SESSION(j,:))), filesep];
         BATCH.Setup.covariates.files{1}{i}{j} = spm_select('FPList', FUNC_folder, 'rp_c.*\.txt$'); % mvt
+
+        % Nifti_outputdir = [path_subjects,subjects{i}, filesep, SESSION{j} filesep];
     end
 end
 
@@ -118,7 +98,7 @@ conn_batch(BATCH);
 % seed to whole brain accumbens
 
 BATCH.Setup.done = 0;
-BATCH.Preprocessing.done = 0;
+BATCH.Preprocessing.done = 1;
 BATCH.Analysis.analysis_number = 1;
 BATCH.Analysis.name = 'SeedNAC-WholebRain';
 BATCH.Analysis.type = 2; % do seed to voxel analysis
