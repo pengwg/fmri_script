@@ -42,8 +42,7 @@ end
 % subjects = subjects(~contains (subjects, '220'),:);
 
 BATCHFILENAME = [path_subjects 'Analysis/FUS_FINALtrial_90Days2'];
-ROIpath = 'ROI/Seed/';
-path_greymatter = 'ROI/GreyMatter/rTPM_Graymatter.nii';
-conn_FUSOUD(path_subjects, {subjects.name}, TR, ROIpath, path_greymatter, BATCHFILENAME)
+conditions = {'RS_Baseline', 'RS_7Days', 'RS_30Days', 'RS_90Days'}; 
+conn_FUSOUD(path_subjects, {subjects.name}, TR, conditions, BATCHFILENAME)
 
 % for 90 days, subjetc 216, 218 and 221 relapsed. Missing subject 223

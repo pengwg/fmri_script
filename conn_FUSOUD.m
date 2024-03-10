@@ -1,9 +1,10 @@
-function conn_FUSOUD(path_subjects, subjects, TR, ROIpath, path_greymatter, BATCHFILENAME)
+function conn_FUSOUD(path_subjects, subjects, TR, conditions, BATCHFILENAME)
 %% SETUP
 %Define batch properties
-clear BATCH;
+ROIpath = 'ROI/Seed/';
+path_greymatter = 'ROI/GreyMatter/rTPM_Graymatter.nii';
 
-BATCH.Setup.conditions.names = {'RS_Baseline', 'RS_7Days', 'RS_30Days'}; 
+BATCH.Setup.conditions.names = conditions;
 
 BATCH.filename = BATCHFILENAME;
 BATCH.Setup.isnew = 1;
@@ -57,7 +58,7 @@ for i =1 : length(subjects)
         BATCH.Setup.functionals{i}{j} = spm_file(cellstr(spm_select('expand', RS_FILE)));
 
         % specify conditions per subject {ncond}{nsub}{nsess}        
-        for k = 1 : length(BATCH.Setup.conditions.names)
+        for k = 1 : length(conditions)
             if k == j
                 % we remove the first 9 scans to avoid any arctefact effect of BOLD signal peak due to the entrance in the MRI
                 BATCH.Setup.conditions.onsets{k}{i}{j} = 9;
