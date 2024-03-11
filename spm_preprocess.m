@@ -39,7 +39,6 @@ for j = 1 : size(SESSIONS, 1)
     end
 
     func_file = func_files{1};
-    func_files_raw = [path_to_func 'c' func_file];
 
     % if size(func_files, 1)> 1 && contains(subject_name,'sub-222-FUS' )
     %     func_files = 'sub-222-FUS_ses-00_RS_-_FMRI_29.nii';
@@ -53,12 +52,12 @@ for j = 1 : size(SESSIONS, 1)
     
     if SPM_directives.do_VDM
         disp(['****** Calculate VDM for subject ' subject_name '******* Session ' session_name  '********' ])
-        spm_VDM(path_to_fmap, subject_name, func_files_raw, blipdir, TotalReadOutTime)
+        spm_VDM(path_to_fmap, subject_name, [path_to_func func_file], blipdir, TotalReadOutTime)
     end
 
     if SPM_directives.do_Realign_Unwarp
         disp(['****** Realign & Unwarp for subject ' subject_name '******* Session ' session_name '********' ])
-        spm_Realign_Unwarp(func_files_raw)        
+        spm_Realign_Unwarp([path_to_func 'c' func_file])        
     end
 
     if SPM_directives.do_SliceTiming_Correction
