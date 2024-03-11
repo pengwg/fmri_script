@@ -3,6 +3,9 @@ clear
 
 % TO ADAPT ACCORDINGLY
 path_subjects = '~/Work/fusOUD/fmri/';
+BATCHFILENAME = [path_subjects 'Analysis/FUS_FINALtrial_90Days2'];
+conditions = {'RS_Baseline', 'RS_7Days', 'RS_30Days', 'RS_90Days'}; 
+
 % path_subjects = '/tm/WVU-RNI/FUS-OUD/PreprocessedData/';
 
 % MR parameters
@@ -41,8 +44,6 @@ end
 % Connectivity Script
 % subjects = subjects(~contains (subjects, '220'),:);
 
-BATCHFILENAME = [path_subjects 'Analysis/FUS_FINALtrial_90Days2'];
-conditions = {'RS_Baseline', 'RS_7Days', 'RS_30Days', 'RS_90Days'}; 
 conn_FUSOUD(path_subjects, {subjects.name}, TR, conditions, BATCHFILENAME)
 
 % for 90 days, subjetc 216, 218 and 221 relapsed. Missing subject 223
