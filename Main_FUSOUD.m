@@ -3,7 +3,7 @@ clear
 
 % TO ADAPT ACCORDINGLY
 path_subjects = '~/Work/fusOUD/fmri/';
-path_subjects = '/tm/WVU-RNI/FUS-OUD/PreprocessedData/';
+% path_subjects = '/tm/WVU-RNI/FUS-OUD/PreprocessedData/';
 
 % MR parameters
 TR = 1;
@@ -12,15 +12,15 @@ TotalReadOutTime = 36.297;
 blipdir = -1;
 
 SPM_directives.do_VDM = true;
-SPM_directives.do_Resclice_Unwarp = true;
+SPM_directives.do_Realign_Unwarp = true;
 SPM_directives.do_SliceTiming_Correction = true;
 SPM_directives.do_register_functional = true;
 SPM_directives.do_Segment = true;
-SPM_directives.do_normalize_functional = true;
-SPM_directives.do_register_greymatter = true; 
-SPM_directives.do_register_whitematter = true;
-SPM_directives.do_register_csf = true;
-SPM_directives.do_register_structural = true;
+SPM_directives.do_normalise_functional = true;
+SPM_directives.do_normalise_greymatter = true; 
+SPM_directives.do_normalise_whitematter = true;
+SPM_directives.do_normalise_csf = true;
+SPM_directives.do_normalise_structural = true;
 SPM_directives.do_smooth = true;
 SPM_directives.do_MotionCheck = true;
 SPM_directives.do_register_ROI = true;
