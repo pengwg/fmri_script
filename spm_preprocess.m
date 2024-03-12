@@ -109,10 +109,10 @@ for j = 1 : size(SESSIONS, 1)
         disp(['******  Smooth functional volumes for subject ' subject_name '******* Session ' session_name '********' ])
         spm_smooth(spm_select('FPlist', path_to_func, '^wu.*\.nii$'), FWMH, 's')
         
-        spm_smooth(spm_select('FPlist', path_to_func, '^wc.*\.nii$'), 8, 's8')
+        spm_smooth(spm_select('FPlist', path_to_func, '^wu.*\.nii$'), 8, 's8')
 
         disp(['******  Smooth functional volumes for subject ' subject_name '******* Session ' session_name '******** with slice timing correction' ])
-        spm_smooth(spm_select('FPlist', path_to_func, '^wauc.*\.nii$'), FWMH, 's')
+        spm_smooth(spm_select('FPlist', path_to_func, '^wau.*\.nii$'), FWMH, 's')
     end
 
     % SANITY CHECK: FRAMEWISE DISPLACEMENT
